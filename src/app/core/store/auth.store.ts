@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment.development';
 import { catchError, of, tap } from 'rxjs';
+import { AuthService } from '../services/auth.service';
 
 export interface AuthState {
   user: UserProfile | null;
@@ -27,7 +28,7 @@ export const AuthStore = signalStore(
       return store.user() ? 'Customer' : null;
     }),
   })),
-  withMethods((store, http = inject(HttpClient), router = inject(Router)) => ({
+  withMethods((store, authService = inject(AuthService), router = inject(Router)) => ({
     setError(err: string | null) {
       patchState(store, { error: err });
     },
@@ -36,7 +37,7 @@ export const AuthStore = signalStore(
     login(credentials: { email: string; password: string }) {
       patchState(store, { isLoading: true, error: null });
 
-      return http.post<UserProfile>(`${environment.apiUrl}/auth/login`, credentials).pipe(
+      return authService.login(credentials).pipe(
         tap((user) => {
           patchState(store, { user, isLoading: false });
           router.navigate(['customer/dashboard']);
@@ -53,7 +54,7 @@ export const AuthStore = signalStore(
     logout() {
       patchState(store, { isLoading: true });
 
-      return http.post(`${environment.apiUrl}/auth/logout`, {}).pipe(
+      return authService.logout().pipe(
         tap(() => {
           patchState(store, initialState);
           router.navigate(['/login']);

@@ -7,6 +7,7 @@ import { AuthStore } from '../../../core/store/auth.store';
 import { catchError, exhaustMap, of, Subject, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment.development';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   imports: [CommonModule, RouterLink, ReactiveFormsModule],
@@ -17,7 +18,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 })
 export class RegisterComponent {
   private fb = inject(FormBuilder);
-  private http = inject(HttpClient);
+  private authService = inject(AuthService);
   private router = inject(Router);
   readonly authStore = inject(AuthStore);
 
@@ -41,7 +42,7 @@ export class RegisterComponent {
           this.registerError = null;
           const payload = this.registerForm.value;
 
-          return this.http.post(`${environment.apiUrl}/auth/register`, payload).pipe(
+          return this.authService.register(payload).pipe(
             tap(() => {
               this.isRegistering = false;
               // Redirect newly registered customer straight to sign in
