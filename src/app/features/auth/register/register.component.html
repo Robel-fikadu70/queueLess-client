@@ -1,0 +1,137 @@
+<!-- src/app/features/auth/register/register.component.html -->
+<div class="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gray-50">
+  <div class="sm:mx-auto sm:w-full sm:max-w-md">
+    <h2 class="text-center text-3xl font-extrabold text-gray-900 tracking-tight">Join QueueLess</h2>
+    <p class="mt-2 text-center text-sm text-gray-600">
+      Set up your credentials to join active digital lines.
+    </p>
+  </div>
+
+  <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+    <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-100">
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-5">
+        <!-- Local Validation Error Display -->
+        @if (registerError) {
+          <div class="rounded-md bg-red-50 p-4 border border-red-200">
+            <p class="text-sm font-medium text-red-800">
+              {{ registerError }}
+            </p>
+          </div>
+        }
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="firstName" class="block text-sm font-semibold text-gray-700"
+              >First name</label
+            >
+            <input
+              id="firstName"
+              type="text"
+              formControlName="firstName"
+              class="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+              placeholder="John"
+            />
+            @if (registerForm.get('firstName')?.touched && registerForm.get('firstName')?.invalid) {
+              <span class="text-xs text-red-600 mt-1 block">Required.</span>
+            }
+          </div>
+
+          <div>
+            <label for="lastName" class="block text-sm font-semibold text-gray-700"
+              >Last name</label
+            >
+            <input
+              id="lastName"
+              type="text"
+              formControlName="lastName"
+              class="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+              placeholder="Doe"
+            />
+            @if (registerForm.get('lastName')?.touched && registerForm.get('lastName')?.invalid) {
+              <span class="text-xs text-red-600 mt-1 block">Required.</span>
+            }
+          </div>
+        </div>
+
+        <div>
+          <label for="email" class="block text-sm font-semibold text-gray-700">Email address</label>
+          <div class="mt-1">
+            <input
+              id="email"
+              type="email"
+              formControlName="email"
+              class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+              placeholder="customer@email.com"
+            />
+          </div>
+          @if (registerForm.get('email')?.touched && registerForm.get('email')?.invalid) {
+            <span class="text-xs text-red-600 mt-1 block">Please enter a valid email address.</span>
+          }
+        </div>
+
+        <div>
+          <label for="password" class="block text-sm font-semibold text-gray-700">Password</label>
+          <div class="mt-1">
+            <input
+              id="password"
+              type="password"
+              formControlName="password"
+              class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+              placeholder="••••••••••••"
+            />
+          </div>
+          <span class="text-xs text-gray-500 mt-1 block"
+            >Must be at least 12 characters with complex attributes.</span
+          >
+          @if (registerForm.get('password')?.touched && registerForm.get('password')?.invalid) {
+            <span class="text-xs text-red-600 mt-1 block font-semibold"
+              >Security requires minimum 12 characters.</span
+            >
+          }
+        </div>
+
+        <div class="pt-2">
+          <button
+            type="submit"
+            [disabled]="isRegistering || registerForm.invalid"
+            class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-150"
+          >
+            @if (isRegistering) {
+              <span class="inline-flex items-center">
+                <svg
+                  class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  ></circle>
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  ></path>
+                </svg>
+                Creating account...
+              </span>
+            } @else {
+              Create Account
+            }
+          </button>
+        </div>
+      </form>
+
+      <div class="mt-6 text-center">
+        <p class="text-sm text-gray-600">
+          Already registered?
+          <a routerLink="/login" class="font-medium text-teal-600 hover:text-teal-500"> Sign in </a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
