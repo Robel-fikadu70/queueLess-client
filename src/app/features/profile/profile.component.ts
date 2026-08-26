@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ProfileService, UserProfileDto } from '../../core/services/profile.service';
+import { ProfileService, UserProfileDto } from '../../core/services/Profile/profile.service';
 import { AuthStore } from '../../core/store/auth.store';
 import { catchError, exhaustMap, Subject, tap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';

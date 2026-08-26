@@ -1,8 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
 import { Observable } from 'rxjs';
-import { UserProfile } from '../../shared/models/user.model';
-import { environment } from '../../../environments/environment.development';
+import { UserProfile } from '../../../shared/models/user.model';
+import { environment } from '../../../../environments/environment.development';
 
 @Service()
 export class AuthService {

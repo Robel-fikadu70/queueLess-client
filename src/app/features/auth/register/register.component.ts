@@ -7,7 +7,7 @@ import { AuthStore } from '../../../core/store/auth.store';
 import { catchError, exhaustMap, of, Subject, tap } from 'rxjs';
 import { environment } from '../../../../environments/environment.development';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService } from '../../../core/services/Auth/auth.service';
 
 @Component({
   imports: [CommonModule, RouterLink, ReactiveFormsModule],
