@@ -19,13 +19,31 @@ const initialState: AuthState = {
   error: null,
 };
 
+function decodeTokenClaims(token: string): any {
+  try {
+    const payloadBase64 = token.split('.')[1];
+    const decodedPayload = atob(payloadBase64);
+    return JSON.parse(decodedPayload);
+  } catch (e) {
+    console.error('Error decoding authorization token claims:', e);
+    return null;
+  }
+}
 export const AuthStore = signalStore(
   { providedIn: 'root' },
   withState(initialState),
   withComputed((store) => ({
     isAuthenticated: computed(() => !!store.user()),
     currentUserRole: computed(() => {
-      return store.user() ? 'Customer' : null;
+      const user = store.user();
+      if (!user || !user.token) return null;
+
+      const claims = decodeTokenClaims(user.token);
+      return (
+        claims?.['role'] ||
+        claims?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
+        null
+      );
     }),
   })),
   withMethods((store, authService = inject(AuthService), router = inject(Router)) => ({
@@ -40,7 +58,14 @@ export const AuthStore = signalStore(
       return authService.login(credentials).pipe(
         tap((user) => {
           patchState(store, { user, isLoading: false });
-          router.navigate(['profile']);
+          const role = store.currentUserRole();
+          if (role == 'Admin') {
+            router.navigate(['/admin/dashboard']);
+          } else if (role === 'Staff') {
+            router.navigate(['/staff/dashboard']);
+          } else {
+            router.navigate(['/customer/dashboard']);
+          }
         }),
         catchError((err) => {
           const errMsg = err.error?.detail ?? 'Authentication Failed.';
