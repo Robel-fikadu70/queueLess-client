@@ -46,6 +46,30 @@ export const routes: Routes = [
       import('./features/staff/dashboard/dashboard.component').then((m) => m.DashboardComponent),
   },
   {
+    path: 'admin/dashboard',
+    canActivate: [authGuard, roleGuard(['Admin'])],
+    loadComponent: () =>
+      import('./features/admin/dashboard/dashboard.component').then((m) => m.DashboardComponent),
+  },
+  {
+    path: 'admin/facilities',
+    canActivate: [authGuard, roleGuard(['Admin'])],
+    loadComponent: () =>
+      import('./features/admin/facilities/facilities.component').then((m) => m.FacilitiesComponent),
+  },
+  {
+    path: 'admin/staff',
+    canActivate: [authGuard, roleGuard(['Admin'])],
+    loadComponent: () =>
+      import('./features/admin/staff/staff.component').then((m) => m.StaffComponent),
+  },
+  {
+    path: 'admin/services',
+    canActivate: [authGuard, roleGuard(['Admin'])],
+    loadComponent: () =>
+      import('./features/admin/services/services.component').then((m) => m.ServicesComponent)
+  },
+  {
     path: 'unauthorized',
     loadComponent: () =>
       import('./features/unauthorized/unauthorized.component').then((m) => m.UnauthorizedComponent),

@@ -90,7 +90,7 @@ export const AuthStore = signalStore(
           router.navigate(['/login']);
           return of(null);
         }),
-      );
+      ).subscribe();
     },
   })),
 );
