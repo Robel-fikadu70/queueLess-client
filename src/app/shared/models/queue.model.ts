@@ -9,6 +9,13 @@ export interface Facility {
   lastModifiedAt: string | null;
 }
 
+export enum QueueStatus
+{
+    Open,
+    Paused,
+    Closed
+}
+
 export interface QueueService {
   id: string;
   facilityId: string;

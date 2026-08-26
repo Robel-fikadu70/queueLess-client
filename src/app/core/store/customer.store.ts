@@ -39,7 +39,7 @@ export const CustomerStore = signalStore(
       // Loads active facilities into the dictionary state wrapper
       loadFacilities() {
         patchState(store, { isLoading: true, error: null });
-        return facilityService.getFacilities().pipe(
+        facilityService.getFacilities().pipe(
           tap((facilities) => {
             patchState(store, { isLoading: false });
             // setAllEntities scales efficiently and prevents UI lag on large datasets
@@ -50,7 +50,7 @@ export const CustomerStore = signalStore(
             patchState(store, { error: detail, isLoading: false });
             return of([]);
           }),
-        );
+        ).subscribe();
       },
 
       // Loads queue services associated with a chosen facility
@@ -65,7 +65,7 @@ export const CustomerStore = signalStore(
             patchState(store, { error: detail, isLoading: false });
             return of([]);
           }),
-        );
+        ).subscribe();
       },
 
       // Enters an active service queue
@@ -96,7 +96,7 @@ export const CustomerStore = signalStore(
             patchState(store, { error: detail, isLoading: false });
             return of(null);
           }),
-        );
+        ).subscribe();
       },
 
       // Logs a physical check-in state
@@ -157,7 +157,7 @@ export const CustomerStore = signalStore(
             patchState(store, { error: detail, isLoading: false });
             return of([]);
           }),
-        );
+        ).subscribe();
       },
     }),
   ),
