@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthStore } from '../../../core/store/auth.store';
@@ -24,13 +24,22 @@ export class RegisterComponent {
 
   registerForm: FormGroup = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(12)]], // Strong passwords default matching Slide 1 (Module 11)
+    password: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(12),
+        Validators.pattern(/[A-Z]/), // Requires at least one uppercase letter
+        Validators.pattern(/[0-9]/), // Requires at least one digit (0-9)
+        Validators.pattern(/[^a-zA-Z0-9]/), // Requires at least one non-alphanumeric character
+      ],
+    ],
     firstName: ['', Validators.required],
     lastName: ['', Validators.required],
   });
 
-  registerError: string | null = null;
-  isRegistering = false;
+  registerError = signal<string | null>(null);
+  isRegistering = signal<boolean>(false);
 
   private registerSubmit$ = new Subject<void>();
 
@@ -38,19 +47,21 @@ export class RegisterComponent {
     this.registerSubmit$
       .pipe(
         exhaustMap(() => {
-          this.isRegistering = true;
-          this.registerError = null;
+          this.isRegistering.set(true);
+          this.registerError.set(null);
           const payload = this.registerForm.value;
 
           return this.authService.register(payload).pipe(
             tap(() => {
-              this.isRegistering = false;
-              // Redirect newly registered customer straight to sign in
+              this.isRegistering.set(false);
               this.router.navigate(['/login']);
             }),
             catchError((err) => {
-              this.registerError = err.error?.detail ?? 'Registration failed. Try again.';
-              this.isRegistering = false;
+              this.isRegistering.set(false);
+
+              //safe error parser
+              const detailMsg = err.error?.detail ?? 'Registration failed. Please Try again.';
+              this.registerError.set(detailMsg);
               return of(null);
             }),
           );
@@ -58,6 +69,27 @@ export class RegisterComponent {
         takeUntilDestroyed(),
       )
       .subscribe();
+  }
+
+  // Helper validation getters for UI checks
+  hasMinLength(): boolean {
+    const val = this.registerForm.get('password')?.value || '';
+    return val.length >= 12;
+  }
+
+  hasUppercase(): boolean {
+    const val = this.registerForm.get('password')?.value || '';
+    return /[A-Z]/.test(val);
+  }
+
+  hasNumber(): boolean {
+    const val = this.registerForm.get('password')?.value || '';
+    return /[0-9]/.test(val);
+  }
+
+  hasSpecialChar(): boolean {
+    const val = this.registerForm.get('password')?.value || '';
+    return /[^a-zA-Z0-9]/.test(val);
   }
 
   onSubmit(): void {

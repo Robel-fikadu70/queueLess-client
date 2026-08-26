@@ -40,7 +40,7 @@ export const AuthStore = signalStore(
       return authService.login(credentials).pipe(
         tap((user) => {
           patchState(store, { user, isLoading: false });
-          router.navigate(['customer/dashboard']);
+          router.navigate(['profile']);
         }),
         catchError((err) => {
           const errMsg = err.error?.detail ?? 'Authentication Failed.';
