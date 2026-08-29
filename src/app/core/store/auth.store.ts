@@ -32,13 +32,13 @@ function decodeTokenClaims(token: string): any {
 export const AuthStore = signalStore(
   { providedIn: 'root' },
   withState(initialState),
-  withComputed((store) => ({
-    isAuthenticated: computed(() => !!store.user()),
+  withComputed((store, authService = inject(AuthService)) => ({
+    isAuthenticated: computed(() => !!authService.accessToken()),
     currentUserRole: computed(() => {
-      const user = store.user();
-      if (!user || !user.token) return null;
+      const token = authService.accessToken();
+      if(!token) return null;
 
-      const claims = decodeTokenClaims(user.token);
+      const claims = decodeTokenClaims(token);
       return (
         claims?.['role'] ||
         claims?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
@@ -51,13 +51,41 @@ export const AuthStore = signalStore(
       patchState(store, { error: err });
     },
 
+    //Quietly restores the session using the X-Refresh-Token cookie
+    initializeSession(){
+      patchState(store, {isLoading: true});
+      return authService.refresh().pipe(
+        tap((res) => {
+          const claims = decodeTokenClaims(res.accessToken);
+          const profile: UserProfile = {
+            userId: claims?.['sub'] || claims?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || '',
+            email: claims?.['email'] || claims?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '',
+            firstName: claims?.['FirstName'] || '',
+            lastName: claims?.['LastName'] || ''
+          };
+          patchState(store, { user: profile, isLoading: false });
+        }),
+        catchError(() => {
+          patchState(store, { user: null, isLoading: false });
+          return of(null);
+        })
+      );
+    },
+
     //core login request
     login(credentials: { email: string; password: string }) {
       patchState(store, { isLoading: true, error: null });
 
       return authService.login(credentials).pipe(
-        tap((user) => {
-          patchState(store, { user, isLoading: false });
+        tap((res) => {
+          const claims = decodeTokenClaims(res.accessToken);
+          const profile: UserProfile = {
+            userId: claims?.['sub'] || claims?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || '',
+            email: claims?.['email'] || claims?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '',
+            firstName: claims?.['FirstName'] || '',
+            lastName: claims?.['LastName'] || ''
+          };
+          patchState(store, { user: profile, isLoading: false });
           const role = store.currentUserRole();
           if (role == 'Admin') {
             router.navigate(['/admin/dashboard']);
