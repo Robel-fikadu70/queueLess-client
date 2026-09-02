@@ -1,5 +1,45 @@
 <div class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-  <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+  <div class="border-b border-gray-200 pb-2 mb-6">
+    <div class="flex items-center justify-between pb-3">
+      <h1 class="text-2xl font-black tracking-tight text-gray-900">Customer Command Center</h1>
+      <div class="flex items-center gap-5">
+        <a
+          routerLink="/profile"
+          routerLinkActive="border-teal-500 text-teal-600"
+          class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm"
+          >Profile</a
+        >
+        <button
+          [disabled]="authStore.isLoading()"
+          (click)="authStore.logout()"
+          class="text-sm font-semibold text-red-600 hover:text-red-500"
+        >
+          Sign Out
+        </button>
+      </div>
+    </div>
+    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+      <a
+        routerLink="/customer/dashboard"
+        routerLinkActive="border-teal-500 text-teal-600"
+        class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm"
+        >Dashboard</a
+      >
+      <a
+        routerLink="/customer/history"
+        routerLinkActive="border-teal-500 text-teal-600"
+        class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm"
+        >History</a
+      >
+      <a
+        routerLink="/customer/active"
+        routerLinkActive="border-teal-500 text-teal-600"
+        class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm"
+        >Active Tickets</a
+      >
+    </nav>
+  </div>
+  <div class="grid grid-cols-1 gap-8 lg:grid-cols-3 pt-6">
     <!-- Left/Main Column: Facility & Service Selection (Span 2) -->
     <div class="lg:col-span-2 space-y-6">
       <!-- Facility Section -->
@@ -32,7 +72,7 @@
                     [class.text-red-800]="facility.status === 'Closed'"
                     class="px-2 py-0.5 text-xs font-semibold rounded-full"
                   >
-                    {{QueueStatus[facility.status] }}
+                    {{ QueueStatus[facility.status] }}
                   </span>
                 </div>
                 <p class="mt-2 text-sm text-gray-500 line-clamp-2">{{ facility.description }}</p>

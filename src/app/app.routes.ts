@@ -40,6 +40,12 @@ export const routes: Routes = [
       import('./features/customer/history/history.component').then((m) => m.HistoryComponent),
   },
   {
+    path: 'customer/active',
+    canActivate: [authGuard, roleGuard(['Customer'])],
+    loadComponent: () =>
+      import('./features/customer/active-tickets/active-tickets.component').then((m) => m.ActiveTicketsComponent)
+  },
+  {
     path: 'staff/dashboard',
     canActivate: [authGuard, roleGuard(['Staff'])],
     loadComponent: () =>

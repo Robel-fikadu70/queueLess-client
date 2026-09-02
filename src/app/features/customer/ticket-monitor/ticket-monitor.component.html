@@ -77,8 +77,8 @@
             <div class="flex items-center justify-between text-sm">
               <span class="text-gray-500 font-medium">Check-In Status:</span>
               <span
-                [class.text-green-600]="t.checkInStatus === 'Checked In'"
-                [class.text-yellow-600]="t.checkInStatus === 'Pending Check-In'"
+                [class.text-green-600]="t.checkInStatus === ticketState.CheckedIn"
+                [class.text-yellow-600]="t.checkInStatus !== ticketState.CheckedIn"
                 class="font-extrabold"
               >
                 {{ t.checkInStatus }}
@@ -89,7 +89,7 @@
           <!-- Actions Panel -->
           <div class="pt-6 space-y-3">
             <!-- Render Check-In conditionally -->
-            @if (t.checkInStatus === 'Pending Check-In') {
+            @if (t.checkInStatus === ticketState.Called) {
               <button
                 (click)="onCheckIn()"
                 class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 transition duration-150"

@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { Staff } from '../../../core/services/Staff/staff';
-import { exhaustMap, of, Subject } from 'rxjs';
+import { exhaustMap, filter, of, Subject, Subscription } from 'rxjs';
 import { StaffStore } from '../../../core/store/staff.store';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { SignalrService } from '../../../core/services/Signalr/signalr';
 
 @Component({
   imports: [CommonModule],
@@ -15,9 +16,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 })
 export class DashboardComponent implements OnInit {
   readonly store = inject(StaffStore);
+  private signalrService = inject(SignalrService);
 
   // Mock service assignment for initial staff counter setup
   assignedServiceId = signal<string>('c138b120-1a22-4412-bd0a-7bb1a12001bb'); // Defaults to Laboratory GUID
+  private eventSubscription = new Subscription();
 
   private callNext$ = new Subject<void>();
   private start$ = new Subject<string>();
@@ -66,7 +69,23 @@ export class DashboardComponent implements OnInit {
       .subscribe();
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    // 1. Establish Connection
+    this.signalrService.connect().then(() => {
+      // 2. Join the targeted broadcast group for this service queue
+      this.signalrService.joinServiceGroup(this.assignedServiceId());
+    });
+
+    // 3. Listen for queue modifications (Section 3.3)
+    this.eventSubscription.add(
+      this.signalrService.positionChanged
+        .pipe(filter((event) => event.serviceId === this.assignedServiceId()))
+        .subscribe(() => {
+          console.log('Queue updated. Refreshing staff workspace waiting list...');
+          this.store.loadDashboard(this.assignedServiceId());
+        }),
+    );
+  }
 
   onCallNext(): void {
     this.callNext$.next();
@@ -86,5 +105,11 @@ export class DashboardComponent implements OnInit {
 
   onRecall(ticketId: string): void {
     this.recall$.next(ticketId);
+  }
+
+  ngOnDestroy(): void {
+    // Unsubscribe to avoid memory leaks
+    this.eventSubscription.unsubscribe();
+    this.signalrService.disconnect();
   }
 }

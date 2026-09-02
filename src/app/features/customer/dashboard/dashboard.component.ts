@@ -6,8 +6,9 @@ import { Facility, QueueService } from '../../../shared/models/queue.model';
 import { exhaustMap, Subject, tap } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { QueueStatus } from '../../../shared/models/queue.model';
+import { AuthStore } from '../../../core/store/auth.store';
 @Component({
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   standalone: true,
   selector: 'app-dashboard',
   styleUrl: './dashboard.component.scss',
@@ -16,6 +17,8 @@ import { QueueStatus } from '../../../shared/models/queue.model';
 })
 export class DashboardComponent implements OnInit {
   readonly store = inject(CustomerStore);
+  readonly authStore = inject(AuthStore);
+
   private router = inject(Router);
 
   QueueStatus = QueueStatus;
@@ -34,16 +37,13 @@ export class DashboardComponent implements OnInit {
     this.joinQueueSubmit$
       .pipe(
         exhaustMap((serviceId) => this.store.joinQueue(serviceId)),
-        tap(() => {
-          const activeId = this.store.activeTicketId();
-          if (activeId) {
-            // Direct the customer straight to their active live queue monitor card
-            this.router.navigate(['/customer/ticket', activeId]);
-          }
-        }),
         takeUntilDestroyed(),
       )
-      .subscribe();
+      .subscribe((res) => {
+        if(res){
+          this.router.navigate(['/customer/ticket', res]);
+        }
+      });
   }
 
   ngOnInit(): void {}
@@ -63,5 +63,6 @@ export class DashboardComponent implements OnInit {
     if (service) {
       this.joinQueueSubmit$.next(service.id);
     }
+    
   }
 }

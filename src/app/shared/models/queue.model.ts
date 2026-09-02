@@ -15,6 +15,16 @@ export enum QueueStatus
     Paused,
     Closed
 }
+export enum TicketState
+{
+    Waiting,
+    Called,
+    CheckedIn,
+    Serving,
+    Completed,
+    Cancelled,
+    NoShow
+}
 
 export interface QueueService {
   id: string;
@@ -35,25 +45,23 @@ export interface TicketDashboard {
   currentTicketBeingServed: string; // Ticket Number or "None"
   estimatedWaitRange: string; // Formatted based on active counters
   queueStatus: 'OPEN' | 'PAUSED' | 'CLOSED';
-  checkInStatus: 'Checked In' | 'Pending Check-In';
+  checkInStatus: TicketState;
 }
 
 export interface TicketHistory {
-  id: string;
-  serviceId: string;
+  ticketId: string;
   ticketNumber: string;
-  sequenceNumber: number;
-  state: 'Waiting' | 'Called' | 'Serving' | 'Completed' | 'Cancelled' | 'NoShow';
-  customerId: string;
-  servedByStaffId: string | null;
-  checkedInAt: string | null;
-  calledAt: string | null;
-  servedAt: string | null;
-  completedAt: string | null;
-  service?: {
-    name: string;
-    facility?: {
-      name: string;
-    };
-  };
+  serviceName: string;
+  facilityName: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface ActiveTicket {
+  ticketId: string;
+  ticketNumber: string;
+  serviceName: string;
+  facilityName: string;
+  status: 'WAITING' | 'CALLED' | 'SERVING';
+  createdAt: string;
 }

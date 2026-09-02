@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment.development';
-import { TicketDashboard, TicketHistory } from '../../../shared/models/queue.model';
+import { ActiveTicket, TicketDashboard, TicketHistory } from '../../../shared/models/queue.model';
 
 @Service()
 export class TicketService {
@@ -29,4 +29,8 @@ export class TicketService {
   getTicketHistory(): Observable<TicketHistory[]> {
     return this.http.get<TicketHistory[]>(`${environment.apiUrl}/tickets/history`);
   }
+
+  getActiveTickets(): Observable<ActiveTicket[]> {
+  return this.http.get<ActiveTicket[]>(`${environment.apiUrl}/tickets/active`);
+}
 }

@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CustomerStore } from '../../../core/store/customer.store';
+import { AuthStore } from '../../../core/store/auth.store';
 
 @Component({
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink, RouterLinkActive],
   standalone: true,
   selector: 'app-history',
   styleUrl: './history.component.scss',
@@ -13,7 +14,7 @@ import { CustomerStore } from '../../../core/store/customer.store';
 })
 export class HistoryComponent implements OnInit {
   readonly store = inject(CustomerStore);
-
+  readonly authStore = inject(AuthStore)
   constructor() {
     this.store.loadHistory();
   }

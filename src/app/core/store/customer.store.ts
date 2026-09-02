@@ -2,10 +2,12 @@ import { signalStore, withState, patchState, withMethods } from '@ngrx/signals';
 import { withEntities, setAllEntities } from '@ngrx/signals/entities';
 import { inject } from '@angular/core';
 import {
+  ActiveTicket,
   Facility,
   QueueService,
   TicketDashboard,
   TicketHistory,
+  TicketState,
 } from '../../shared/models/queue.model';
 import { tap, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
@@ -17,6 +19,7 @@ export interface CustomerState {
   activeTicketId: string | null;
   ticketDashboard: TicketDashboard | null;
   history: TicketHistory[];
+  activeTickets: ActiveTicket[];
   isLoading: boolean;
   error: string | null;
 }
@@ -26,6 +29,7 @@ const initialState: CustomerState = {
   activeTicketId: null,
   ticketDashboard: null,
   history: [],
+  activeTickets: [],
   isLoading: false,
   error: null,
 };
@@ -39,33 +43,39 @@ export const CustomerStore = signalStore(
       // Loads active facilities into the dictionary state wrapper
       loadFacilities() {
         patchState(store, { isLoading: true, error: null });
-        facilityService.getFacilities().pipe(
-          tap((facilities) => {
-            patchState(store, { isLoading: false });
-            // setAllEntities scales efficiently and prevents UI lag on large datasets
-            patchState(store, setAllEntities(facilities));
-          }),
-          catchError((err) => {
-            const detail = err.error?.detail ?? 'Failed to load active facilities.';
-            patchState(store, { error: detail, isLoading: false });
-            return of([]);
-          }),
-        ).subscribe();
+        facilityService
+          .getFacilities()
+          .pipe(
+            tap((facilities) => {
+              patchState(store, { isLoading: false });
+              // setAllEntities scales efficiently and prevents UI lag on large datasets
+              patchState(store, setAllEntities(facilities));
+            }),
+            catchError((err) => {
+              const detail = err.error?.detail ?? 'Failed to load active facilities.';
+              patchState(store, { error: detail, isLoading: false });
+              return of([]);
+            }),
+          )
+          .subscribe();
       },
 
       // Loads queue services associated with a chosen facility
       loadServices(facilityId: string) {
         patchState(store, { isLoading: true, error: null, services: [] });
-        return facilityService.getServicesByFacility(facilityId).pipe(
-          tap((services) => {
-            patchState(store, { services, isLoading: false });
-          }),
-          catchError((err) => {
-            const detail = err.error?.detail ?? 'Failed to load services.';
-            patchState(store, { error: detail, isLoading: false });
-            return of([]);
-          }),
-        ).subscribe();
+        return facilityService
+          .getServicesByFacility(facilityId)
+          .pipe(
+            tap((services) => {
+              patchState(store, { services, isLoading: false });
+            }),
+            catchError((err) => {
+              const detail = err.error?.detail ?? 'Failed to load services.';
+              patchState(store, { error: detail, isLoading: false });
+              return of([]);
+            }),
+          )
+          .subscribe();
       },
 
       // Enters an active service queue
@@ -87,16 +97,19 @@ export const CustomerStore = signalStore(
       // Fetches live dashboard stats for an active ticket
       loadTicketDashboard(ticketId: string) {
         patchState(store, { isLoading: true, error: null });
-        return ticketService.getTicketDashboard(ticketId).pipe(
-          tap((ticketDashboard) => {
-            patchState(store, { ticketDashboard, isLoading: false });
-          }),
-          catchError((err) => {
-            const detail = err.error?.detail ?? 'Failed to fetch ticket dashboard details.';
-            patchState(store, { error: detail, isLoading: false });
-            return of(null);
-          }),
-        ).subscribe();
+        return ticketService
+          .getTicketDashboard(ticketId)
+          .pipe(
+            tap((ticketDashboard) => {
+              patchState(store, { ticketDashboard, isLoading: false });
+            }),
+            catchError((err) => {
+              const detail = err.error?.detail ?? 'Failed to fetch ticket dashboard details.';
+              patchState(store, { error: detail, isLoading: false });
+              return of(null);
+            }),
+          )
+          .subscribe();
       },
 
       // Logs a physical check-in state
@@ -109,7 +122,7 @@ export const CustomerStore = signalStore(
               patchState(store, {
                 ticketDashboard: {
                   ...store.ticketDashboard()!,
-                  checkInStatus: 'Checked In',
+                  checkInStatus: TicketState.CheckedIn,
                 },
                 isLoading: false,
               });
@@ -148,16 +161,36 @@ export const CustomerStore = signalStore(
       // Fetches user queue history
       loadHistory() {
         patchState(store, { isLoading: true, error: null });
-        return ticketService.getTicketHistory().pipe(
-          tap((history) => {
-            patchState(store, { history, isLoading: false });
-          }),
-          catchError((err) => {
-            const detail = err.error?.detail ?? 'Failed to load queue history.';
-            patchState(store, { error: detail, isLoading: false });
-            return of([]);
-          }),
-        ).subscribe();
+        return ticketService
+          .getTicketHistory()
+          .pipe(
+            tap((history) => {
+              patchState(store, { history, isLoading: false });
+            }),
+            catchError((err) => {
+              const detail = err.error?.detail ?? 'Failed to load queue history.';
+              patchState(store, { error: detail, isLoading: false });
+              return of([]);
+            }),
+          )
+          .subscribe();
+      },
+
+      loadActiveTickets() {
+        patchState(store, { isLoading: true, error: null });
+        ticketService
+          .getActiveTickets()
+          .pipe(
+            tap((activeTickets) => {
+              patchState(store, { activeTickets, isLoading: false });
+            }),
+            catchError((err) => {
+              const detail = err.error?.detail ?? 'Failed to load active tickets.';
+              patchState(store, { error: detail, isLoading: false });
+              return of([]);
+            }),
+          )
+          .subscribe(); // Explicit subscription as requested
       },
     }),
   ),
