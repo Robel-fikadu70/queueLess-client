@@ -3,7 +3,19 @@ import { inject, Service } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DashboardStats, StaffMember } from '../../../shared/models/admin.model';
 import { environment } from '../../../../environments/environment.development';
-import { Facility, QueueService } from '../../../shared/models/queue.model';
+import { Facility, QueueService, QueueStatus } from '../../../shared/models/queue.model';
+import { FacilityStatus } from '../../store/admin.store';
+export interface UpdateFacilityRequest {
+  name: string;
+  description?: string;
+  location: string;
+  operatingHours: string;
+}
+export interface UpdateServiceRequest {
+  Name: string;
+  Description?: string;
+  EstimatedDurationMinutes: number;
+}
 
 @Service()
 export class AdminService {
@@ -39,8 +51,12 @@ export class AdminService {
     return this.http.post<string>(`${environment.apiUrl}/facilities`, payload);
   }
 
-  updateFacility(id: string, payload: Partial<Facility>): Observable<void> {
+  updateFacility(id: string, payload: UpdateFacilityRequest): Observable<void> {
     return this.http.put<void>(`${environment.apiUrl}/facilities/${id}`, payload);
+  }
+
+  updateFacilityStatus(id: string, status: FacilityStatus): Observable<void> {
+    return this.http.patch<void>(`${environment.apiUrl}/facilities/${id}/status`, { id, status });
   }
 
   deleteFacility(id: string): Observable<void> {
@@ -52,7 +68,11 @@ export class AdminService {
     return this.http.post<string>(`${environment.apiUrl}/services`, payload);
   }
 
-  updateService(id: string, payload: Partial<QueueService>): Observable<void> {
+  updateService(id: string, payload: UpdateServiceRequest): Observable<void> {
     return this.http.put<void>(`${environment.apiUrl}/services/${id}`, payload);
+  }
+
+  updateServiceStatus(id: string, isActive: boolean): Observable<void> {
+    return this.http.patch<void>(`${environment.apiUrl}/services/${id}/status`, isActive);
   }
 }

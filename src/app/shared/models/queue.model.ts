@@ -1,3 +1,5 @@
+export type FacilityStatus = 'Open' | 'Paused' | 'Closed';
+
 export interface Facility {
   id: string;
   name: string;

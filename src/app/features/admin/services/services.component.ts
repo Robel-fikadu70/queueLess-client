@@ -1,13 +1,19 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AdminStore } from '../../../core/store/admin.store';
 import { QueueService } from '../../../shared/models/queue.model';
 import { AuthStore } from '../../../core/store/auth.store';
 
 @Component({
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, RouterLinkActive, FormsModule],
   standalone: true,
   selector: 'app-services',
   styleUrl: './services.component.scss',
@@ -23,6 +29,10 @@ export class ServicesComponent implements OnInit {
   selectedFacilityId = signal<string>('');
   editingServiceId: string | null = null;
   showFormModal = false;
+
+  showStatusModal = false;
+  statusService: QueueService | null = null;
+  selectedActiveStatus: boolean | null = null;
 
   constructor() {
     this.serviceForm = this.fb.group({
@@ -61,6 +71,18 @@ export class ServicesComponent implements OnInit {
     this.showFormModal = true;
   }
 
+  openStatusModal(service: QueueService): void {
+    this.statusService = service;
+    this.selectedActiveStatus = service.isActive;
+    this.showStatusModal = true;
+  }
+
+  closeStatusModal(): void {
+    this.showStatusModal = false;
+    this.statusService = null;
+    this.selectedActiveStatus = null;
+  }
+
   onSave(): void {
     if (this.serviceForm.invalid) return;
 
@@ -78,7 +100,13 @@ export class ServicesComponent implements OnInit {
     this.showFormModal = false;
   }
 
-  onToggleActive(service: QueueService): void {
-    this.store.updateService(service.id, { isActive: !service.isActive });
+  onStatusChange(): void {
+    if (!this.statusService || this.selectedActiveStatus === null) {
+      return;
+    }
+
+    this.store.updateServiceStatus(this.statusService.id, this.selectedActiveStatus);
+
+    this.closeStatusModal();
   }
 }

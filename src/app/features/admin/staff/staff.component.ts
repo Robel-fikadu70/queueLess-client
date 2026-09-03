@@ -25,6 +25,7 @@ export class StaffComponent implements OnInit {
   selectedStaff: StaffMember | null = null;
   showRegisterModal = false;
   showAssignModal = false;
+  isRegistering = false;
 
   constructor() {
     this.registerForm = this.fb.group({
@@ -54,7 +55,15 @@ export class StaffComponent implements OnInit {
   }
 
   openRegisterModal(): void {
-    this.registerForm.reset({ password: 'Password123!' });
+    this.registerForm.reset({
+      email: '',
+      password: 'Password123!',
+      firstName: '',
+      lastName: '',
+    });
+
+    this.registerForm.markAsPristine();
+    this.registerForm.markAsUntouched();
     this.showRegisterModal = true;
   }
 
@@ -65,8 +74,15 @@ export class StaffComponent implements OnInit {
   }
 
   onRegisterSubmit(): void {
-    if (this.registerForm.invalid) return;
-    this.store.registerStaff(this.registerForm.value, () => {
+    if (this.registerForm.invalid || this.isRegistering) {
+      this.registerForm.markAllAsTouched();
+      return;
+    }
+
+    this.isRegistering = true;
+
+    this.store.registerStaff(this.registerForm.getRawValue(), () => {
+      this.isRegistering = false;
       this.showRegisterModal = false;
     });
   }

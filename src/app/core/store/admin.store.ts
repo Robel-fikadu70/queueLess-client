@@ -1,6 +1,6 @@
 import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 import { DashboardStats, StaffMember } from '../../shared/models/admin.model';
-import { Facility, QueueService } from '../../shared/models/queue.model';
+import { Facility, QueueService, QueueStatus } from '../../shared/models/queue.model';
 import {
   addEntity,
   removeEntity,
@@ -9,7 +9,7 @@ import {
   withEntities,
 } from '@ngrx/signals/entities';
 import { inject } from '@angular/core';
-import { AdminService } from '../services/Admin/admin.service';
+import { AdminService, UpdateFacilityRequest, UpdateServiceRequest } from '../services/Admin/admin.service';
 import { FacilityService } from '../services/Facility/facility.service';
 import { catchError, of, tap } from 'rxjs';
 
@@ -27,6 +27,8 @@ const initialState: AdminState = {
   isLoading: false,
   error: null,
 };
+
+export type FacilityStatus = 'Open' | 'Paused' | 'Closed';
 
 export const AdminStore = signalStore(
   { providedIn: 'root' },
@@ -97,7 +99,7 @@ export const AdminStore = signalStore(
                 description: payload.description ?? '',
                 location: payload.location ?? '',
                 operatingHours: payload.operatingHours ?? '',
-                status: 'Open',
+                status: 'Closed',
                 createdAt: new Date().toISOString(),
                 lastModifiedAt: null,
               };
@@ -113,12 +115,12 @@ export const AdminStore = signalStore(
       },
 
       // 5. Update Facility Details (Optimistic UI Pattern)
-      updateFacility(id: string, payload: Partial<Facility>) {
+      updateFacility(id: string, payload: UpdateFacilityRequest) {
         // 1. Capture snapshot before mutation for potential rollback
         const snapshot = store.entities();
 
         // 2. Apply update immediately to keep UI highly responsive
-        patchState(store, updateEntity({ id, changes: payload }));
+        patchState(store, { isLoading: true, error: null }, updateEntity({ id, changes: payload }));
 
         adminService
           .updateFacility(id, payload)
@@ -127,6 +129,33 @@ export const AdminStore = signalStore(
               const detail = err.error?.detail ?? 'Failed to update facility.';
               // 3. Roll back to the captured state snapshot if the API call fails
               patchState(store, setAllEntities(snapshot), { error: detail });
+              return of(null);
+            }),
+          )
+          .subscribe();
+      },
+
+      //5.1 update facility status
+      updateFacilityStatus(id: string, status: FacilityStatus) {
+        const snapshot = store.entities();
+
+        patchState(
+          store,
+          { isLoading: true, error: null },
+          updateEntity({
+            id,
+            changes: { status },
+          }),
+        );
+
+        adminService
+          .updateFacilityStatus(id, status)
+          .pipe(
+            catchError((err) => {
+              const detail = err.error?.detail ?? 'Failed to update facility status.';
+
+              patchState(store, setAllEntities(snapshot), { error: detail });
+
               return of(null);
             }),
           )
@@ -199,7 +228,7 @@ export const AdminStore = signalStore(
       },
 
       // 9. Update Service (Optimistic)
-      updateService(id: string, payload: Partial<QueueService>) {
+      updateService(id: string, payload: UpdateServiceRequest) {
         const snapshot = store.services();
         const updated = snapshot.map((s) => (s.id === id ? { ...s, ...payload } : s));
         patchState(store, { services: updated });
@@ -210,6 +239,30 @@ export const AdminStore = signalStore(
             catchError((err) => {
               const detail = err.error?.detail ?? 'Failed to update service details.';
               patchState(store, { services: snapshot, error: detail });
+              return of(null);
+            }),
+          )
+          .subscribe();
+      },
+
+      updateServiceStatus(id: string, isActive: boolean) {
+        const snapshot = store.services();
+
+        const updated = snapshot.map((s) => (s.id === id ? { ...s, isActive } : s));
+
+        patchState(store, { services: updated });
+
+        adminService
+          .updateServiceStatus(id, isActive)
+          .pipe(
+            catchError((err) => {
+              const detail = err.error?.detail ?? 'Failed to update service status.';
+
+              patchState(store, {
+                services: snapshot,
+                error: detail,
+              });
+
               return of(null);
             }),
           )
