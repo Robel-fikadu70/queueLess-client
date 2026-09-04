@@ -1,0 +1,312 @@
+<div class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+  <div class="space-y-6">
+    <!-- Unified Administrative Navigation Header -->
+    <div class="border-b border-gray-200 pb-2">
+      <div class="flex items-center justify-between pb-3">
+        <h1 class="text-2xl font-black tracking-tight text-gray-900">Admin Command Center</h1>
+        <button
+          [disabled]="store.isLoading()"
+          (click)="authStore.logout()"
+          class="text-sm font-semibold text-red-600 hover:text-red-500"
+        >
+          Sign Out
+        </button>
+      </div>
+      <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+        <a
+          routerLink="/admin/dashboard"
+          routerLinkActive="border-teal-500 text-teal-600"
+          class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm"
+          >Dashboard</a
+        >
+        <a
+          routerLink="/admin/facilities"
+          routerLinkActive="border-teal-500 text-teal-600"
+          class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm"
+          >Facilities</a
+        >
+        <a
+          routerLink="/admin/services"
+          routerLinkActive="border-teal-500 text-teal-600"
+          class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm"
+          >Services</a
+        >
+        <a
+          routerLink="/admin/staff"
+          routerLinkActive="border-teal-500 text-teal-600"
+          class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm"
+          >Staff Assignments</a
+        >
+      </nav>
+    </div>
+
+    <!-- Action Section Header -->
+    <div class="flex items-center justify-between pt-2">
+      <div>
+        <h2 class="text-xl font-bold tracking-tight text-gray-900">Facilities Branch Management</h2>
+        <p class="mt-1 text-sm text-gray-500">
+          Add, edit, or toggle branch operation statuses dynamically.
+        </p>
+      </div>
+      <button
+        (click)="openCreateModal()"
+        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-semibold rounded-md text-white bg-teal-600 hover:bg-teal-700 transition"
+      >
+        Add Facility
+      </button>
+    </div>
+
+    <!-- Error Banner -->
+    @if (store.error()) {
+      <div
+        class="rounded-md bg-red-50 p-4 border border-red-200 text-xs font-semibold text-red-800"
+      >
+        {{ store.error() }}
+      </div>
+    }
+
+    <!-- Facilities list -->
+    <div class="bg-white shadow overflow-hidden border border-gray-200 sm:rounded-lg">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">
+              Facility Name
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Location</th>
+            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Hours</th>
+            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Status</th>
+            <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          @for (f of store.entities(); track f.id) {
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span class="font-bold text-gray-900 block">{{ f.name }}</span>
+                <span class="text-xs text-gray-400 block line-clamp-1 mt-0.5">{{
+                  f.description
+                }}</span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ f.location }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {{ f.operatingHours }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center gap-2">
+                  <span
+                    class="inline-flex items-center gap-1.5 text-xs leading-5 font-semibold rounded-full px-2.5 py-0.5"
+                    [class.bg-green-100]="f.status === 'Open'"
+                    [class.text-green-800]="f.status === 'Open'"
+                    [class.bg-yellow-100]="f.status === 'Paused'"
+                    [class.text-yellow-800]="f.status === 'Paused'"
+                    [class.bg-red-100]="f.status === 'Closed'"
+                    [class.text-red-800]="f.status === 'Closed'"
+                  >
+                    <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+                    {{ facilityStatus[f.status] }}
+                  </span>
+
+                  <button
+                    type="button"
+                    (click)="openStatusModal(f)"
+                    class="text-xs font-semibold text-teal-600 hover:text-teal-800"
+                  >
+                    Change
+                  </button>
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                <button (click)="openEditModal(f)" class="text-teal-600 hover:text-teal-900">
+                  Edit
+                </button>
+                <button (click)="onDelete(f.id)" class="text-red-600 hover:text-red-900">
+                  Delete
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="text-center py-12 text-sm text-gray-500">
+                No facilities registered.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Modal Panel -->
+    @if (showFormModal) {
+      <div
+        class="fixed z-10 inset-0 overflow-y-auto bg-gray-600 bg-opacity-50 flex items-center justify-center p-4"
+      >
+        <div
+          class="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all max-w-lg w-full p-6"
+        >
+          <h3 class="text-lg font-bold text-gray-900 mb-4">
+            {{ editingFacilityId ? 'Edit Facility' : 'Create Facility' }}
+          </h3>
+
+          <form [formGroup]="facilityForm" (ngSubmit)="onSave()" class="space-y-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700">Facility Name</label>
+              <input
+                type="text"
+                formControlName="name"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-teal-500 focus:border-teal-500"
+                placeholder="City Hospital"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700">Description</label>
+              <textarea
+                formControlName="description"
+                rows="3"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-teal-500 focus:border-teal-500"
+                placeholder="Describe the facility branch..."
+              ></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700">Location Address</label>
+              <input
+                type="text"
+                formControlName="location"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm focus:ring-teal-500 focus:border-teal-500"
+                placeholder="Bole District, Rd 5"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700">Operating Hours</label>
+              <input
+                type="text"
+                formControlName="operatingHours"
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm"
+              />
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-100">
+              <button
+                type="button"
+                (click)="showFormModal = false"
+                class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                [disabled]="facilityForm.invalid"
+                class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700"
+              >
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
+
+    @if (showStatusModal && statusFacility) {
+      <div class="fixed inset-0 z-20 flex items-center justify-center bg-gray-900/50 p-4">
+        <div class="w-full max-w-md rounded-lg bg-white shadow-xl">
+          <div class="border-b border-gray-100 px-6 py-4">
+            <h3 class="text-lg font-bold text-gray-900">Change Facility Status</h3>
+
+            <p class="mt-1 text-sm text-gray-500">
+              Update the operational status for
+              <span class="font-semibold text-gray-700">
+                {{ statusFacility.name }} </span
+              >.
+            </p>
+          </div>
+
+          <div class="space-y-3 px-6 py-5">
+            <!-- Open -->
+            <label
+              class="flex cursor-pointer items-center justify-between rounded-md border p-4 transition"
+              [class.border-teal-500]="selectedStatus === 'Open'"
+              [class.bg-teal-50]="selectedStatus === 'Open'"
+              [class.border-gray-200]="selectedStatus !== 'Open'"
+            >
+              <div>
+                <div class="font-semibold text-gray-900">Open</div>
+                <div class="text-xs text-gray-500">Customers can join queues normally.</div>
+              </div>
+
+              <input
+                type="radio"
+                name="facilityStatus"
+                [value]="QueueStatus.Open"
+                [(ngModel)]="selectedStatus"
+                class="h-4 w-4 text-teal-600"
+              />
+            </label>
+
+            <!-- Paused -->
+            <label
+              class="flex cursor-pointer items-center justify-between rounded-md border p-4 transition"
+              [class.border-teal-500]="selectedStatus === 'Paused'"
+              [class.bg-teal-50]="selectedStatus === 'Paused'"
+              [class.border-gray-200]="selectedStatus !== 'Paused'"
+            >
+              <div>
+                <div class="font-semibold text-gray-900">Paused</div>
+                <div class="text-xs text-gray-500">Temporarily stop new queue joins.</div>
+              </div>
+
+              <input
+                type="radio"
+                name="facilityStatus"
+                [value]="QueueStatus.Paused"
+                [(ngModel)]="selectedStatus"
+                class="h-4 w-4 text-teal-600"
+              />
+            </label>
+
+            <!-- Closed -->
+            <label
+              class="flex cursor-pointer items-center justify-between rounded-md border p-4 transition"
+              [class.border-teal-500]="selectedStatus === 'Closed'"
+              [class.bg-teal-50]="selectedStatus === 'Closed'"
+              [class.border-gray-200]="selectedStatus !== 'Closed'"
+            >
+              <div>
+                <div class="font-semibold text-gray-900">Closed</div>
+                <div class="text-xs text-gray-500">
+                  Facility is unavailable for queue operations.
+                </div>
+              </div>
+
+              <input
+                type="radio"
+                name="facilityStatus"
+                [value]="QueueStatus.Closed"
+                [(ngModel)]="selectedStatus"
+                class="h-4 w-4 text-teal-600"
+              />
+            </label>
+          </div>
+
+          <div class="flex justify-end gap-3 border-t border-gray-100 px-6 py-4">
+            <button
+              type="button"
+              (click)="closeStatusModal()"
+              class="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              (click)="onStatusChange()"
+              [disabled]="selectedStatus === statusFacility.status"
+              class="rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Update Status
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

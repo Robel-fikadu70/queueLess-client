@@ -1,7 +1,9 @@
 export interface UserProfile {
-  userId: string;
   email: string;
   firstName: string;
   lastName: string;
-  token?: string; // Fallback fallback token wrapper
+  role: 'Customer' | 'Staff' | 'Admin';
+  assignedServiceId?: string | null;
+  assignedServiceName?: string | null;
+  counterNumber?: number | null;
 }
