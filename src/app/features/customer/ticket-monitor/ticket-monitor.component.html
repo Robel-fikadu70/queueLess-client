@@ -1,6 +1,5 @@
 <div class="max-w-xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
   <div class="space-y-6">
-    <!-- Back Navigation link -->
     <a
       routerLink="/customer/dashboard"
       class="inline-flex items-center text-sm font-semibold text-teal-600 hover:text-teal-500"
@@ -25,88 +24,197 @@
       </div>
     }
 
-    <!-- Active Ticket monitor dashboard Card -->
+    <!-- Main Dynamic Interfaces based on Ticket state -->
     @if (store.ticketDashboard(); as t) {
-      <div class="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100">
-        <!-- Top Colored Header Badge -->
-        <div class="bg-teal-600 px-6 py-4 flex items-center justify-between">
-          <span class="text-sm font-bold text-teal-100 tracking-wider uppercase">{{
-            t.serviceName
-          }}</span>
-          <span
-            [class.bg-green-500]="t.queueStatus === 'OPEN'"
-            [class.bg-yellow-500]="t.queueStatus === 'PAUSED'"
-            [class.bg-red-500]="t.queueStatus === 'CLOSED'"
-            class="px-2 py-0.5 rounded-full text-xs font-bold text-white uppercase"
-          >
-            Queue: {{ t.queueStatus }}
-          </span>
-        </div>
-
-        <div class="p-6 space-y-6">
-          <div class="text-center">
-            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block"
-              >Your Ticket Number</span
+      <!-- 1. SERVICE COMPLETED SCREEN -->
+      @if (t.checkInStatus === ticketState.Completed) {
+        <div
+          class="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100 p-8 text-center space-y-6"
+        >
+          <div class="inline-flex p-3 bg-green-100 rounded-full text-green-600">
+            <svg class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-2xl font-black text-gray-900">Service Completed</h1>
+            <p class="mt-2 text-sm text-gray-500">
+              Your ticket <span class="font-extrabold text-teal-600">{{ t.ticketNumber }}</span> has
+              been processed. Thank you for using QueueLess!
+            </p>
+          </div>
+          <div class="pt-4 border-t border-gray-100">
+            <a
+              routerLink="/customer/dashboard"
+              class="w-full inline-flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 transition"
             >
-            <span class="text-5xl font-black text-gray-900 block mt-2">{{ t.ticketNumber }}</span>
-            <span class="text-sm text-gray-500 block mt-1.5">{{ t.facilityName }}</span>
+              Back to Dashboard
+            </a>
+          </div>
+        </div>
+      }
+
+      <!-- 2. NO-SHOW / SKIPPED SCREEN -->
+      @else if (t.checkInStatus === ticketState.NoShow) {
+        <div
+          class="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100 p-8 text-center space-y-6"
+        >
+          <div class="inline-flex p-3 bg-red-100 rounded-full text-red-600">
+            <svg class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-2xl font-black text-gray-900">Ticket Skipped</h1>
+            <p class="mt-2 text-sm text-gray-500">
+              Ticket <span class="font-extrabold text-red-600">{{ t.ticketNumber }}</span> was
+              marked as a No-Show because you did not arrive within the grace period.
+            </p>
+          </div>
+          <div class="pt-4 border-t border-gray-100">
+            <a
+              routerLink="/customer/dashboard"
+              class="w-full inline-flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 transition"
+            >
+              Re-Join a Queue
+            </a>
+          </div>
+        </div>
+      }
+
+      <!-- 3. CANCELLED SCREEN -->
+      @else if (t.checkInStatus === ticketState.Cancelled) {
+        <div
+          class="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100 p-8 text-center space-y-6"
+        >
+          <div class="inline-flex p-3 bg-gray-100 rounded-full text-gray-500">
+            <svg class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-2xl font-black text-gray-900">Ticket Cancelled</h1>
+            <p class="mt-2 text-sm text-gray-500">
+              This ticket has been cancelled and removed from the active queue lines.
+            </p>
+          </div>
+          <div class="pt-4 border-t border-gray-100">
+            <a
+              routerLink="/customer/dashboard"
+              class="w-full inline-flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 transition"
+            >
+              Back to Dashboard
+            </a>
+          </div>
+        </div>
+      }
+
+      <!-- 4. ACTIVE MONITORING SCREEN (Waiting, Called, Serving, CheckedIn) -->
+      @else {
+        <div class="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100">
+          <!-- Top Colored Header Badge -->
+          <div class="bg-teal-600 px-6 py-4 flex items-center justify-between">
+            <span class="text-sm font-bold text-teal-100 tracking-wider uppercase">{{
+              t.serviceName
+            }}</span>
+            <span
+              [class.bg-green-500]="t.queueStatus === 'OPEN'"
+              [class.bg-yellow-500]="t.queueStatus === 'PAUSED'"
+              [class.bg-red-500]="t.queueStatus === 'CLOSED'"
+              class="px-2 py-0.5 rounded-full text-xs font-bold text-white uppercase"
+            >
+              Queue: {{ t.queueStatus }}
+            </span>
           </div>
 
-          <!-- Progress Grid Stats -->
-          <div
-            class="grid grid-cols-2 gap-4 border-t border-b border-gray-100 py-6 my-6 text-center"
-          >
-            <div>
-              <span class="text-xs font-bold text-gray-400 uppercase block">People Ahead</span>
-              <span class="text-2xl font-black text-gray-900 block mt-1">{{ t.peopleAhead }}</span>
-            </div>
-            <div>
-              <span class="text-xs font-bold text-gray-400 uppercase block">Estimated Wait</span>
-              <span class="text-2xl font-black text-teal-600 block mt-1">{{
-                t.estimatedWaitRange
-              }}</span>
-            </div>
-          </div>
-
-          <!-- Queue Alerts & Info -->
-          <div class="space-y-4">
-            <div class="flex items-center justify-between text-sm">
-              <span class="text-gray-500 font-medium">Currently serving:</span>
-              <span class="font-extrabold text-gray-900">{{ t.currentTicketBeingServed }}</span>
-            </div>
-            <div class="flex items-center justify-between text-sm">
-              <span class="text-gray-500 font-medium">Check-In Status:</span>
-              <span
-                [class.text-green-600]="t.checkInStatus === ticketState.CheckedIn"
-                [class.text-yellow-600]="t.checkInStatus !== ticketState.CheckedIn"
-                class="font-extrabold"
+          <div class="p-6 space-y-6">
+            <div class="text-center">
+              <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block"
+                >Your Ticket Number</span
               >
-                {{ t.checkInStatus }}
-              </span>
+              <span class="text-5xl font-black text-gray-900 block mt-2">{{ t.ticketNumber }}</span>
+              <span class="text-sm text-gray-500 block mt-1.5">{{ t.facilityName }}</span>
             </div>
-          </div>
 
-          <!-- Actions Panel -->
-          <div class="pt-6 space-y-3">
-            <!-- Render Check-In conditionally -->
-            @if (t.checkInStatus === ticketState.Called) {
+            <!-- Progress Grid Stats -->
+            <div
+              class="grid grid-cols-2 gap-4 border-t border-b border-gray-100 py-6 my-6 text-center"
+            >
+              <div>
+                <span class="text-xs font-bold text-gray-400 uppercase block">People Ahead</span>
+                <span class="text-2xl font-black text-gray-900 block mt-1">{{
+                  t.peopleAhead
+                }}</span>
+              </div>
+              <div>
+                <span class="text-xs font-bold text-gray-400 uppercase block">Estimated Wait</span>
+                <span class="text-2xl font-black text-teal-600 block mt-1">{{
+                  t.estimatedWaitRange
+                }}</span>
+              </div>
+            </div>
+
+            <!-- Queue Alerts & Info -->
+            <div class="space-y-4">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-500 font-medium">Currently serving:</span>
+                <span class="font-extrabold text-gray-900">{{ t.currentTicketBeingServed }}</span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-500 font-medium">Check-In Status:</span>
+                <span
+                  [class.text-green-600]="
+                    t.checkInStatus === ticketState.CheckedIn ||
+                    t.checkInStatus === ticketState.Serving
+                  "
+                  [class.text-yellow-600]="
+                    t.checkInStatus === ticketState.Waiting ||
+                    t.checkInStatus === ticketState.Called
+                  "
+                  class="font-extrabold"
+                >
+                  {{ ticketState[t.checkInStatus] }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Actions Panel -->
+            <div class="pt-6 space-y-3">
+              <!-- Render Check-In conditionally -->
+              @if (t.checkInStatus === ticketState.Called) {
+                <button
+                  (click)="onCheckIn()"
+                  class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 transition duration-150 animate-bounce"
+                >
+                  Check In at Facility
+                </button>
+              }
+
               <button
-                (click)="onCheckIn()"
-                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 transition duration-150"
+                (click)="onLeaveQueue()"
+                class="w-full flex justify-center py-3 px-4 border border-red-200 hover:bg-red-50 rounded-lg text-sm font-semibold text-red-600 transition duration-150"
               >
-                Check In at Facility
+                Cancel / Leave Queue
               </button>
-            }
-
-            <button
-              (click)="onLeaveQueue()"
-              class="w-full flex justify-center py-3 px-4 border border-red-200 hover:bg-red-50 rounded-lg text-sm font-semibold text-red-600 transition duration-150"
-            >
-              Cancel / Leave Queue
-            </button>
+            </div>
           </div>
         </div>
-      </div>
+      }
     } @else {
       <!-- Initial Loading skeleton loader -->
       <div class="bg-white shadow rounded-xl p-6 space-y-6 border border-gray-100 animate-pulse">

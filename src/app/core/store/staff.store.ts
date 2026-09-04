@@ -1,7 +1,8 @@
 import { patchState, signalStore, withMethods, withState } from "@ngrx/signals";
 import { CurrentlyServing, RecentActivity, Staff, WaitingTicket } from "../services/Staff/staff";
 import { inject } from "@angular/core";
-import { catchError, of, tap } from "rxjs";
+import { catchError, of, switchMap, tap } from "rxjs";
+import { TicketState } from "../../shared/models/queue.model";
 
 
 export interface StaffState {
@@ -50,12 +51,14 @@ export const StaffStore = signalStore(
     callNext(serviceId: string) {
       patchState(store, { isLoading: true, error: null });
 
-      staffService.callNext(serviceId).pipe(
-        tap((ticket) => {
+      return staffService.callNext(serviceId).pipe(
+        switchMap(() => staffService.getStaffDashboard(serviceId)),
+        tap((data) => {
           // Update currently serving, and remove the first person from waiting list
           patchState(store, {
-            currentlyServing: ticket,
-            waitingList: store.waitingList().filter(t => t.id !== ticket.id),
+            currentlyServing: data.currentlyServing,
+            waitingList: data.waitingList,
+            recentActivity: data.recentActivity,
             isLoading: false
           });
         }),
@@ -64,27 +67,27 @@ export const StaffStore = signalStore(
           patchState(store, { error: detail, isLoading: false });
           return of(null);
         })
-      ).subscribe();
+      );
     },
 
     // 3. Move state from Called -> Serving (Customer arrived at counter)
     startCounterService(ticketId: string) {
-      // Optimistic state transition matching Slide 10 guidelines
+      // Optimistic state transition
       const previous = store.currentlyServing();
       if (store.currentlyServing()) {
         patchState(store, {
-          currentlyServing: { ...store.currentlyServing()!, state: 'Serving' }
+          currentlyServing: { ...store.currentlyServing()!, state: TicketState.Serving }
         });
       }
 
-      staffService.startService(ticketId).pipe(
+      return staffService.startService(ticketId).pipe(
         catchError((err) => {
           const detail = err.error?.detail ?? 'Failed to start service.';
           // Rollback to previous called state if API rejects
           patchState(store, { currentlyServing: previous, error: detail });
           return of(null);
         })
-      ).subscribe();
+      )
     },
 
     // 4. Complete current service at counter
@@ -92,10 +95,10 @@ export const StaffStore = signalStore(
       const active = store.currentlyServing();
       patchState(store, { currentlyServing: null, isLoading: true });
 
-      staffService.completeService(ticketId).pipe(
+      return staffService.completeService(ticketId).pipe(
         tap(() => {
           if (active) {
-            const completedRecord: RecentActivity = { id: active.id, ticketNumber: active.ticketNumber, state: 'Completed' };
+            const completedRecord: RecentActivity = { id: active.id, ticketNumber: active.ticketNumber, state: TicketState.Completed };
             patchState(store, {
               recentActivity: [completedRecord, ...store.recentActivity()],
               isLoading: false
@@ -107,7 +110,7 @@ export const StaffStore = signalStore(
           patchState(store, { currentlyServing: active, error: detail, isLoading: false });
           return of(null);
         })
-      ).subscribe();
+      );
     },
 
     // 5. Skip customer (No-Show)
@@ -115,10 +118,10 @@ export const StaffStore = signalStore(
       const active = store.currentlyServing();
       patchState(store, { currentlyServing: null, isLoading: true });
 
-      staffService.skipNoShow(ticketId).pipe(
+      return staffService.skipNoShow(ticketId).pipe(
         tap(() => {
           if (active) {
-            const skippedRecord: RecentActivity = { id: active.id, ticketNumber: active.ticketNumber, state: 'NoShow' };
+            const skippedRecord: RecentActivity = { id: active.id, ticketNumber: active.ticketNumber, state: TicketState.NoShow };
             patchState(store, {
               recentActivity: [skippedRecord, ...store.recentActivity()],
               isLoading: false
@@ -130,20 +133,20 @@ export const StaffStore = signalStore(
           patchState(store, { currentlyServing: active, error: detail, isLoading: false });
           return of(null);
         })
-      ).subscribe();
+      )
     },
 
     // 6. Recall skipped customer
     recallSkipped(ticketId: string) {
       patchState(store, { isLoading: true, error: null });
 
-      staffService.recall(ticketId).pipe(
+     return staffService.recall(ticketId).pipe(
         tap(() => {
           // Re-populate active serving slot, and clear from recent activity lists
           const recalledTicket: CurrentlyServing = {
             id: ticketId,
             ticketNumber: store.recentActivity().find(t => t.id === ticketId)?.ticketNumber ?? 'REC-1',
-            state: 'Called',
+            state: TicketState.Called,
             sequenceNumber: 0,
             checkedInAt: new Date().toISOString()
           };
@@ -158,7 +161,7 @@ export const StaffStore = signalStore(
           patchState(store, { error: detail, isLoading: false });
           return of(null);
         })
-      ).subscribe();
+      );
     }
   }))
 );

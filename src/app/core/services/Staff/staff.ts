@@ -2,23 +2,24 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment.development';
+import { TicketState } from '../../../shared/models/queue.model';
 
 export interface CurrentlyServing {
   id: string;
   ticketNumber: string;
-  state: 'Called' | 'Serving';
+  state: TicketState.Called | TicketState.Serving | TicketState.CheckedIn;
   sequenceNumber: number;
   checkedInAt: string;
 }
 export interface WaitingTicket {
   id: string;
   ticketNumber: string;
-  state: 'Waiting';
+  state: TicketState.Waiting;
 }
 export interface RecentActivity {
   id: string;
   ticketNumber: string;
-  state: 'Completed' | 'NoShow';
+  state: TicketState.Completed | TicketState.NoShow;
 }
 export interface StaffDashboardDto {
   currentlyServing: CurrentlyServing | null;

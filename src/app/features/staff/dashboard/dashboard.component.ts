@@ -1,10 +1,19 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { Staff } from '../../../core/services/Staff/staff';
 import { exhaustMap, filter, of, Subject, Subscription } from 'rxjs';
 import { StaffStore } from '../../../core/store/staff.store';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SignalrService } from '../../../core/services/Signalr/signalr';
+import { AuthStore } from '../../../core/store/auth.store';
+import { TicketState } from '../../../shared/models/queue.model';
 
 @Component({
   imports: [CommonModule],
@@ -16,10 +25,14 @@ import { SignalrService } from '../../../core/services/Signalr/signalr';
 })
 export class DashboardComponent implements OnInit {
   readonly store = inject(StaffStore);
+  private authStore = inject(AuthStore);
+  public ticketState = TicketState;
   private signalrService = inject(SignalrService);
 
-  // Mock service assignment for initial staff counter setup
-  assignedServiceId = signal<string>('c138b120-1a22-4412-bd0a-7bb1a12001bb');
+  assignedServiceId = computed(() => this.authStore.user()?.assignedServiceId ?? null);
+  assignedServiceName = computed(() => this.authStore.user()?.assignedServiceName ?? 'Unassigned');
+  counterNumber = computed(() => this.authStore.user()?.counterNumber ?? null);
+
   private eventSubscription = new Subscription();
 
   private callNext$ = new Subject<void>();
@@ -29,60 +42,63 @@ export class DashboardComponent implements OnInit {
   private recall$ = new Subject<string>();
 
   constructor() {
-    // Reload dashboard on initialization
-    this.store.loadDashboard(this.assignedServiceId());
-
-    // Defensive operations streams using exhaustMap to prevent duplicate triggers
+    const serviceId = this.assignedServiceId();
+    if (serviceId) {
+      this.store.loadDashboard(serviceId);
+    }
     this.callNext$
       .pipe(
-        exhaustMap(() => of(this.store.callNext(this.assignedServiceId()))),
+        exhaustMap(() => {
+          const id = this.assignedServiceId();
+          return id ? this.store.callNext(id) : of(null);
+        }),
         takeUntilDestroyed(),
       )
       .subscribe();
 
     this.start$
       .pipe(
-        exhaustMap((id) => of(this.store.startCounterService(id))),
+        exhaustMap((id) => this.store.startCounterService(id)),
         takeUntilDestroyed(),
       )
       .subscribe();
 
     this.complete$
       .pipe(
-        exhaustMap((id) => of(this.store.completeCounterService(id))),
+        exhaustMap((id) => this.store.completeCounterService(id)),
         takeUntilDestroyed(),
       )
       .subscribe();
 
     this.skip$
       .pipe(
-        exhaustMap((id) => of(this.store.skipNoShow(id))),
+        exhaustMap((id) => this.store.skipNoShow(id)),
         takeUntilDestroyed(),
       )
       .subscribe();
 
     this.recall$
       .pipe(
-        exhaustMap((id) => of(this.store.recallSkipped(id))),
+        exhaustMap((id) => this.store.recallSkipped(id)),
         takeUntilDestroyed(),
       )
       .subscribe();
   }
 
   ngOnInit(): void {
-    // 1. Establish Connection
+    const serviceId = this.assignedServiceId();
+    if (!serviceId) return;
+
     this.signalrService.connect().then(() => {
-      // 2. Join the targeted broadcast group for this service queue
-      this.signalrService.joinServiceGroup(this.assignedServiceId());
+      this.signalrService.joinServiceGroup(serviceId);
     });
 
-    // 3. Listen for queue modifications (Section 3.3)
     this.eventSubscription.add(
       this.signalrService.positionChanged
-        .pipe(filter((event) => event.serviceId === this.assignedServiceId()))
+        .pipe(filter((event) => event.serviceId === serviceId))
         .subscribe(() => {
           console.log('Queue updated. Refreshing staff workspace waiting list...');
-          this.store.loadDashboard(this.assignedServiceId());
+          this.store.loadDashboard(serviceId);
         }),
     );
   }
@@ -107,8 +123,11 @@ export class DashboardComponent implements OnInit {
     this.recall$.next(ticketId);
   }
 
+  onSignOut(): void {
+    this.authStore.logout();
+  }
+
   ngOnDestroy(): void {
-    // Unsubscribe to avoid memory leaks
     this.eventSubscription.unsubscribe();
     this.signalrService.disconnect();
   }

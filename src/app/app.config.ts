@@ -20,6 +20,7 @@ import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { AuthStore } from './core/store/auth.store';
 import { AuthService } from './core/services/Auth/auth.service';
 
+
 export const appConfig: ApplicationConfig = {
   providers: [
     
@@ -39,5 +40,9 @@ export const appConfig: ApplicationConfig = {
         headerName: 'X-XSRF-TOKEN',
       }),
     ),
+    provideAppInitializer(() => {
+      const authStore = inject(AuthStore);
+      return authStore.initializeSession();
+    })
   ],
 };

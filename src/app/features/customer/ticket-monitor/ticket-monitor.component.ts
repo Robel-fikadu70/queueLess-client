@@ -19,7 +19,7 @@ export class TicketMonitorComponent {
   readonly store = inject(CustomerStore);
   private signalrService = inject(SignalrService);
   id = input.required<string>();
-  public ticketState = TicketState
+  public ticketState = TicketState;
 
   private checkInClick$ = new Subject<void>();
   private cancelClick$ = new Subject<void>();
