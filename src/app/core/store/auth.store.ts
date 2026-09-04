@@ -4,7 +4,7 @@ import { computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment.development';
-import { catchError, of, tap } from 'rxjs';
+import { catchError, of, switchMap, tap } from 'rxjs';
 import { AuthService } from '../services/Auth/auth.service';
 
 export interface AuthState {
@@ -19,57 +19,31 @@ const initialState: AuthState = {
   error: null,
 };
 
-function decodeTokenClaims(token: string): any {
-  try {
-    const payloadBase64 = token.split('.')[1];
-    const decodedPayload = atob(payloadBase64);
-    return JSON.parse(decodedPayload);
-  } catch (e) {
-    console.error('Error decoding authorization token claims:', e);
-    return null;
-  }
-}
 export const AuthStore = signalStore(
   { providedIn: 'root' },
   withState(initialState),
-  withComputed((store, authService = inject(AuthService)) => ({
-    isAuthenticated: computed(() => !!authService.accessToken()),
-    currentUserRole: computed(() => {
-      const token = authService.accessToken();
-      if(!token) return null;
-
-      const claims = decodeTokenClaims(token);
-      return (
-        claims?.['role'] ||
-        claims?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
-        null
-      );
-    }),
+  withComputed((store) => ({
+    isAuthenticated: computed(() => !!store.user()),
+    currentUserRole: computed(() => store.user()?.role ?? null ),
   })),
   withMethods((store, authService = inject(AuthService), router = inject(Router)) => ({
     setError(err: string | null) {
       patchState(store, { error: err });
     },
 
-    //Quietly restores the session using the X-Refresh-Token cookie
+    //silent refresh pattern calls /me on startup
     initializeSession(){
       patchState(store, {isLoading: true});
-      return authService.refresh().pipe(
-        tap((res) => {
-          const claims = decodeTokenClaims(res.accessToken);
-          const profile: UserProfile = {
-            userId: claims?.['sub'] || claims?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || '',
-            email: claims?.['email'] || claims?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '',
-            firstName: claims?.['FirstName'] || '',
-            lastName: claims?.['LastName'] || ''
-          };
+      return authService.getCurrentUser().pipe(
+        tap((profile) => {
           patchState(store, { user: profile, isLoading: false });
         }),
         catchError(() => {
           patchState(store, { user: null, isLoading: false });
+          router.navigate(['/login']);
           return of(null);
         })
-      );
+      ).subscribe();
     },
 
     //core login request
@@ -77,14 +51,8 @@ export const AuthStore = signalStore(
       patchState(store, { isLoading: true, error: null });
 
       return authService.login(credentials).pipe(
-        tap((res) => {
-          const claims = decodeTokenClaims(res.accessToken);
-          const profile: UserProfile = {
-            userId: claims?.['sub'] || claims?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || '',
-            email: claims?.['email'] || claims?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || '',
-            firstName: claims?.['FirstName'] || '',
-            lastName: claims?.['LastName'] || ''
-          };
+        switchMap(() => authService.getCurrentUser()),
+        tap((profile) => {
           patchState(store, { user: profile, isLoading: false });
           const role = store.currentUserRole();
           if (role == 'Admin') {

@@ -1,6 +1,6 @@
 export interface UserProfile {
-  userId: string;
   email: string;
   firstName: string;
   lastName: string;
+  role: 'Customer' | 'Staff' | 'Admin'
 }

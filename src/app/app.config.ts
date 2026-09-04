@@ -17,7 +17,6 @@ import {
 } from '@angular/common/http';
 import { credentialsInterceptor } from './core/interceptors/credentials.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
-import { jwtInterceptor } from './core/interceptors/jwt-interceptor';
 import { AuthStore } from './core/store/auth.store';
 import { AuthService } from './core/services/Auth/auth.service';
 
@@ -32,7 +31,6 @@ export const appConfig: ApplicationConfig = {
       //Registers credentials injector and global exception handler
       withInterceptors([
         credentialsInterceptor, //Sets withCredentioal: true
-        jwtInterceptor, //Injects Bearer Authorization header
         errorInterceptor, //Trigers silent token refreshes
       ]),
       //Maps XSRF cookies automatically to outbound HTTP header wrappers
@@ -41,9 +39,5 @@ export const appConfig: ApplicationConfig = {
         headerName: 'X-XSRF-TOKEN',
       }),
     ),
-    provideAppInitializer(() => {
-      const auth = inject(AuthStore)
-      return auth.initializeSession();
-    }),
   ],
 };

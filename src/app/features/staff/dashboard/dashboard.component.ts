@@ -19,7 +19,7 @@ export class DashboardComponent implements OnInit {
   private signalrService = inject(SignalrService);
 
   // Mock service assignment for initial staff counter setup
-  assignedServiceId = signal<string>('c138b120-1a22-4412-bd0a-7bb1a12001bb'); // Defaults to Laboratory GUID
+  assignedServiceId = signal<string>('c138b120-1a22-4412-bd0a-7bb1a12001bb');
   private eventSubscription = new Subscription();
 
   private callNext$ = new Subject<void>();

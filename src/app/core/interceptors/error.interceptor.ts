@@ -22,32 +22,22 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       if (err.status === 401 && !isAuthRoute) {
         // Triggers silent token rotation
         return authService.refresh().pipe(
-          switchMap((res) => {
-            // Replay the original failed request with the newly rotated Access Token
-            const retryReq = req.clone({
-              setHeaders: {
-                Authorization: `Bearer ${res.accessToken}`,
-              },
-            });
-            return next(retryReq);
+          switchMap(() => {
+            return next(req);
           }),
           catchError((refreshErr) => {
             // If refresh fails (Theft Detection or expired refresh token), invalidate session and route to login
-            console.warn('Silent session refresh failed. Session expired or compromised.');
-            authService.setAccessToken(null);
+            console.warn('Refresh token is expired or has been compromised. Redirecting to login.');
             router.navigate(['/login']);
             return throwError(() => refreshErr);
           }),
         );
       }
 
-      // If direct login or refresh fails, clear token state
-      if (err.status === 401) {
-        authService.setAccessToken(null);
-        if (!isAuthRoute) {
-          router.navigate(['/login']);
-        }
-      } else {
+      // If direct auth routes fails, redirect to login
+      if (err.status === 401 && isAuthRoute) {
+        router.navigate(['/login']);
+      } else if (err.status !== 401) {
         console.error('API Error Response:', detail);
       }
 
